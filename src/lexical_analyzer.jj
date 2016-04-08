@@ -31,8 +31,8 @@ PARSER_BEGIN(Scanner)
         return ;
       }
       try {
-        scanner.Start();
-        System.out.println ("Scanner: The input was readed sucessfully.");
+        jscanner.Start();
+        System.out.println ("Scanner: The input was read sucessfully.");
       }
       catch(ParseException e){
         System.out.println ("Scanner: There was an error during the parse.");
@@ -73,7 +73,7 @@ TOKEN : {
 | <CMPEQUALS: "==">
 | <CMPNEQUALS: "!=">
 | <GTHAN: ">">
-| <STHAN: "<">
+| <LTHAN: "<">
 | <PLUS: "+">
 | <MINUS: "-">
 | <MULTIPLY: "*">
@@ -91,10 +91,10 @@ TOKEN : {
 | <CASE: "case">
 | <CATCH: "catch">
 | <CHAR: "char">
-| <CLASSS: "class">
+| <CLASS: "class">
 | <CONST: "const">
 | <CONTINUE: "continue">
-| <DEFAULT: "default">
+| <DEFAULTR: "default">
 | <DO: "do">
 | <DOUBLE: "double">
 | <ELSE: "else">
@@ -145,9 +145,17 @@ TOKEN : {
 void Start () : {}
 {
   (
-    INTEGER_CONSTANT | STRING_CONSTANT | LOGIC_CONSTANT |
-    NOT | IF | END | SUB | LET | CALL | THEN | CASE | ELSE | INPUT | PRINT | SELECT | STATIC |
-    IDENTIFIER
+    <INTEGER_CONSTANT> | <STRING_CONSTANT> | <LOGIC_CONSTANT> | <HEXADECIMAL_CONSTANT> | 
+    <CLOSE01> | <CLOSE02> | <CLOSE11> | <CLOSE12> | <CLOSE21> | <CLOSE22> | 
+    <SEMICOLON> | <DOT> | 
+    <EQUALS> | <CMPEQUALS> | <CMPNEQUALS> | 
+    <GTHAN> | <LTHAN> |
+    <PLUS> | <MINUS> | <MULTIPLY> | <DIVIDE> |
+    <OTHER> |
+    <ABSTRACT> | <ASSERT> | <BOOLEAN> | <BREAK> | <BYTE> | <CASE> | <CATCH> | <CHAR> | <CLASS> | <CONST> | <CONTINUE> | <DEFAULTR> | <DO> | <DOUBLE> | <ELSE> | <ENUM> | <EXTENDS> | <FINAL> |
+    <FINALLY> | <FLOAT> | <FOR> | <GOTO> | <IF> | <IMPLEMENTS> | <IMPORT> | <INSTANCEOF> | <INT> | <INTERFACE> | <LONG> | <NATIVE> | <NEW> | <PACKAGE> | <PRIVATE> | <PROTECTED> | <PUBLIC> |
+    <RETURN> | <SHORT> | <STATIC> | <STRICTFP> | <SUPER> | <SWITCH> | <SYNCHRONIZED> | <THIS> | <THROW> | <THROWS> | <TRANSIENT> | <TRY> | <VOID> | <VOLATILE> | <WHILE> |
+    <IDENTIFIER>
   )*
   <EOF>
 }
