@@ -1,4 +1,5 @@
 options {
+  STATIC = false;
   IGNORE_CASE = true;
 }
 PARSER_BEGIN(Scanner)
@@ -8,39 +9,40 @@ PARSER_BEGIN(Scanner)
 
       //Parser initialization
       Scanner jscanner;
+      int count_args = args.length;
 
-      if(args.length == 0){
+      if(count_args == 0) {
         System.out.println ("Scanner: Waiting for input ...");
         jscanner = new Scanner(System.in);
       }
-      else if(args.length == 1){
-        System.out.println ("Scanner: Reading the file " + args[0] + " ..." );
-        try {
-          jscanner = new Scanner(new java.io.FileInputStream(args[0]));
-        }
-        catch(java.io.FileNotFoundException e) {
-          System.out.println ("Scanner: The file " + args[0] + " was not found.");
-          return;
-        }
-      }
+      else if(count_args > 1) {
+          for(int i = 0; i < count_args; i++) {
+              System.out.println ("Scanner: Reading the file " + args[i] + " ..." );
+              try {
+                  jscanner = new Scanner(new java.io.FileInputStream(args[i]));
+                  jscanner.Start();
+                  System.out.println ("Scanner: The input was read sucessfully.");
+                  }
+              catch(java.io.FileNotFoundException e) {
+                  System.out.println ("Scanner: The file " + args[i] + " was not found.");
+                  return;
+                  }
+              catch(ParseException e) {
+                  System.out.println ("Scanner: There was an error during the parse.");
+                  System.out.println (e.getMessage());
+                  }
+              catch(TokenMgrError e) {
+                  System.out.println ("Scanner: There was an error.");
+                  System.out.println (e.getMessage());
+                  }
+                 }
+                }
       else {
         System.out.println ("Scanner:  You must use one of the following:");
-        System.out.println ("         java Scanner < file");
+        System.out.println ("         java Scanner < files");
         System.out.println ("Or");
-        System.out.println ("         java Scanner file");
+        System.out.println ("         java Scanner files");
         return ;
-      }
-      try {
-        jscanner.Start();
-        System.out.println ("Scanner: The input was read sucessfully.");
-      }
-      catch(ParseException e){
-        System.out.println ("Scanner: There was an error during the parse.");
-        System.out.println (e.getMessage());
-      }
-      catch(TokenMgrError e){
-        System.out.println ("Scanner: There was an error.");
-        System.out.println (e.getMessage());
       }
     }
   }
