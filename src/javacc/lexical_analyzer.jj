@@ -1,6 +1,5 @@
 options {
   STATIC = false;
-  IGNORE_CASE = true;
 }
 PARSER_BEGIN(Scanner)
 
@@ -15,7 +14,7 @@ PARSER_BEGIN(Scanner)
         System.out.println ("Scanner: Waiting for input ...");
         jscanner = new Scanner(System.in);
       }
-      else if(count_args > 1) {
+      else if(count_args >= 1) {
           for(int i = 0; i < count_args; i++) {
               System.out.println ("Scanner: Reading the file " + args[i] + " ..." );
               try {
@@ -39,13 +38,14 @@ PARSER_BEGIN(Scanner)
                 }
       else {
         System.out.println ("Scanner:  You must use one of the following:");
-        System.out.println ("         java Scanner < files");
+        System.out.println ("\tjava Scanner < files");
         System.out.println ("Or");
-        System.out.println ("         java Scanner files");
+        System.out.println ("\tjava Scanner files");
         return ;
       }
     }
   }
+
 PARSER_END(Scanner)
 
 SKIP : {
@@ -80,7 +80,6 @@ TOKEN : {
 | <MINUS: "-">
 | <MULTIPLY: "*">
 | <DIVIDE: "/">
-| <OTHER: ~[]>
 }
 
 //RESERVED WORDS
@@ -143,6 +142,10 @@ TOKEN : {
 |  <#LETTER: (["a"-"z","A"-"Z"])>
 }
 
+TOKEN : {
+ <OTHER: ~[]>
+}
+
 //MAIN UNIT
 void Start () : {}
 {
@@ -153,7 +156,7 @@ void Start () : {}
     <EQUALS> | <CMPEQUALS> | <CMPNEQUALS> | 
     <GTHAN> | <LTHAN> |
     <PLUS> | <MINUS> | <MULTIPLY> | <DIVIDE> |
-    <OTHER> |
+    //<OTHER> |
     <ABSTRACT> | <ASSERT> | <BOOLEAN> | <BREAK> | <BYTE> | <CASE> | <CATCH> | <CHAR> | <CLASS> | <CONST> | <CONTINUE> | <DEFAULTR> | <DO> | <DOUBLE> | <ELSE> | <ENUM> | <EXTENDS> | <FINAL> |
     <FINALLY> | <FLOAT> | <FOR> | <GOTO> | <IF> | <IMPLEMENTS> | <IMPORT> | <INSTANCEOF> | <INT> | <INTERFACE> | <LONG> | <NATIVE> | <NEW> | <PACKAGE> | <PRIVATE> | <PROTECTED> | <PUBLIC> |
     <RETURN> | <SHORT> | <STATIC> | <STRICTFP> | <SUPER> | <SWITCH> | <SYNCHRONIZED> | <THIS> | <THROW> | <THROWS> | <TRANSIENT> | <TRY> | <VOID> | <VOLATILE> | <WHILE> |
