@@ -54,6 +54,13 @@ SKIP : {
 |  "\n"
 |  "\r"
 |  <"rem" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+|  <"//" (~["\n","\r"])*>
+|  <"/*"> : MULTILINE_COMMENT_STATE
+}
+
+<MULTILINE_COMMENT_STATE> SKIP : {
+  <"*/"> : DEFAULT
+| <~[]>
 }
 
 //STATIC TOKENS
@@ -63,19 +70,33 @@ TOKEN : {
 | <STRING_CONSTANT: "\"" ( ~["\"","\\","\n","\r"] | "\\" ( ["n","t","b","r","f","\\","\'","\""] | ( ["\n","\r"] | "\r\n")))* "\"">
 | <HEXADECIMAL_CONSTANT: "0"("x" | "X")(<LETTER> | <DIGIT>)+>
 | <#DIGIT: ["0"-"9"]>
+
 | <CLOSE01: "(">
 | <CLOSE02: ")">
 | <CLOSE11: "{">
 | <CLOSE12: "}">
 | <CLOSE21: "[">
 | <CLOSE22: "]">
-| <SEMICOLON: ";">
+
+| <COMMA: ",">
 | <DOT: ".">
+| <SEMICOLON: ";">
+| <COLON: ":">
+
 | <EQUALS: "=">
+
 | <CMPEQUALS: "==">
 | <CMPNEQUALS: "!=">
+| <AND: "&&">
+| <OR: "||">
 | <GTHAN: ">">
 | <LTHAN: "<">
+
+| <NOT: "!">
+
+| <CONCAT: "&">
+| <UNION: "|">
+
 | <PLUS: "+">
 | <MINUS: "-">
 | <MULTIPLY: "*">
@@ -100,7 +121,6 @@ TOKEN : {
 | <DOUBLE: "double">
 | <ELSE: "else">
 | <ENUM: "enum">
-| <EXTENDS: "extends">
 | <FINAL: "final">
 | <FINALLY: "finally">
 | <FLOAT: "float">
@@ -108,6 +128,7 @@ TOKEN : {
 | <GOTO: "goto">
 | <IF: "if">
 | <IMPLEMENTS: "implements">
+| <EXTENDS: "extends">
 | <IMPORT: "import">
 | <INSTANCEOF: "instanceof">
 | <INT: "int">
@@ -134,6 +155,7 @@ TOKEN : {
 | <VOID: "void">
 | <VOLATILE: "volatile">
 | <WHILE: "while">
+| <NOTATION: "@"(["a"-"z","A"-"Z","0"-"9"])*>
 }
 
 //IDENTIFIER TOKEN
@@ -142,24 +164,26 @@ TOKEN : {
 |  <#LETTER: (["a"-"z","A"-"Z"])>
 }
 
-TOKEN : {
+/*TOKEN : {
  <OTHER: ~[]>
-}
+}*/
 
 //MAIN UNIT
 void Start () : {}
 {
   (
-    <INTEGER_CONSTANT> | <STRING_CONSTANT> | <LOGIC_CONSTANT> | <HEXADECIMAL_CONSTANT> | 
-    <CLOSE01> | <CLOSE02> | <CLOSE11> | <CLOSE12> | <CLOSE21> | <CLOSE22> | 
-    <SEMICOLON> | <DOT> | 
-    <EQUALS> | <CMPEQUALS> | <CMPNEQUALS> | 
-    <GTHAN> | <LTHAN> |
+    <INTEGER_CONSTANT> | <STRING_CONSTANT> | <LOGIC_CONSTANT> | <HEXADECIMAL_CONSTANT> |
+    <CLOSE01> | <CLOSE02> | <CLOSE11> | <CLOSE12> | <CLOSE21> | <CLOSE22> |
+    <COMMA> | <DOT> | <SEMICOLON> | <COLON> |
+    <EQUALS> |
+    <CMPEQUALS> | <CMPNEQUALS> | <AND> | <OR> | <GTHAN> | <LTHAN> |
+    <NOT> |
+    <CONCAT> | <UNION> |
     <PLUS> | <MINUS> | <MULTIPLY> | <DIVIDE> |
-    //<OTHER> |
     <ABSTRACT> | <ASSERT> | <BOOLEAN> | <BREAK> | <BYTE> | <CASE> | <CATCH> | <CHAR> | <CLASS> | <CONST> | <CONTINUE> | <DEFAULTR> | <DO> | <DOUBLE> | <ELSE> | <ENUM> | <EXTENDS> | <FINAL> |
     <FINALLY> | <FLOAT> | <FOR> | <GOTO> | <IF> | <IMPLEMENTS> | <IMPORT> | <INSTANCEOF> | <INT> | <INTERFACE> | <LONG> | <NATIVE> | <NEW> | <PACKAGE> | <PRIVATE> | <PROTECTED> | <PUBLIC> |
     <RETURN> | <SHORT> | <STATIC> | <STRICTFP> | <SUPER> | <SWITCH> | <SYNCHRONIZED> | <THIS> | <THROW> | <THROWS> | <TRANSIENT> | <TRY> | <VOID> | <VOLATILE> | <WHILE> |
+    <NOTATION> |
     <IDENTIFIER>
   )*
   <EOF>
