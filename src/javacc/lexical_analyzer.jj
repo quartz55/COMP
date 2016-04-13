@@ -19,7 +19,7 @@ PARSER_BEGIN(Scanner)
               System.out.println ("Scanner: Reading the file " + args[i] + " ..." );
               try {
                   jscanner = new Scanner(new java.io.FileInputStream(args[i]));
-                  jscanner.Start();
+                  jscanner.Begin();
                   System.out.println ("Scanner: The input was read sucessfully.");
                   }
               catch(java.io.FileNotFoundException e) {
@@ -66,6 +66,7 @@ SKIP : {
 //STATIC TOKENS
 TOKEN : {
   <INTEGER_CONSTANT: (<PLUS> | <MINUS>)?(<DIGIT>)+>
+| <FLOAT_CONSTANT: (<PLUS> | <MINUS>)?(<DIGIT>)+<DOT>(<DIGIT>)+>
 | <LOGIC_CONSTANT: "true" | "false" | "-1">
 | <STRING_CONSTANT: "\"" ( ~["\"","\\","\n","\r"] | "\\" ( ["n","t","b","r","f","\\","\'","\""] | ( ["\n","\r"] | "\r\n")))* "\"">
 | <HEXADECIMAL_CONSTANT: "0"("x" | "X")(<LETTER> | <DIGIT>)+>
@@ -164,9 +165,9 @@ TOKEN : {
 |  <#LETTER: (["a"-"z","A"-"Z"])>
 }
 
-/*TOKEN : {
+TOKEN : {
  <OTHER: ~[]>
-}*/
+}
 
 //MAIN UNIT
 void Start () : {}
@@ -187,4 +188,124 @@ void Start () : {}
     <IDENTIFIER>
   )*
   <EOF>
+}
+
+void Begin () : {String mainClassName;}
+{
+(Package())?
+(Import())*
+mainClassName=ClassDecl()
+<CLOSE11>
+ClassScope(mainClassName)
+<CLOSE12>
+}
+
+void Package () : {}
+{
+<PACKAGE> <IDENTIFIER> (<DOT> <IDENTIFIER>)* <SEMICOLON>
+}
+
+void Import () : {}
+{
+<IMPORT> <IDENTIFIER>
+(LOOKAHEAD(2) <DOT> <IDENTIFIER>)*
+(<DOT> <MULTIPLY>)?
+<SEMICOLON>
+}
+
+String ClassDecl () : {Token t;}
+{
+(Scope())? <CLASS>
+t=<IDENTIFIER> {
+    System.out.println("Found class \'"+t.image+"\'");
+    return t.image;
+    }
+}
+
+void ClassScope (String className) : {}
+{
+    {
+        System.out.println("Enterning scope of \'"+className+"\'");
+    }
+(
+    (Scope())? StorageType()
+    ( LOOKAHEAD(3)
+        ClassConstructorDecl(className) |
+        LOOKAHEAD(3)
+        ClassVarDecl() |
+        LOOKAHEAD(3)
+        ClassFuncDecl()
+    )
+)*
+}
+
+void ClassConstructorDecl (String name) : {Token t;}
+{
+t=<IDENTIFIER> {if (!t.image.equals(name)) return;
+System.out.println("Found constructor of "+name);}
+<CLOSE01>
+(FuncArgDecl() (<COMMA> FuncArgDecl())*)?
+<CLOSE02>
+// Body
+<CLOSE11>
+<CLOSE12>
+}
+
+void ClassVarDecl () : {}
+{
+VarType() ArrayDecl()
+<IDENTIFIER> (<COMMA> <IDENTIFIER>)*
+(<EQUALS> VarAssign())?
+<SEMICOLON>
+}
+
+void ClassFuncDecl () : {}
+{
+ReturnType() ArrayDecl()
+<IDENTIFIER>
+// Args
+<CLOSE01>
+(FuncArgDecl() (<COMMA> FuncArgDecl())*)?
+<CLOSE02>
+// Body
+<CLOSE11>
+<CLOSE12>
+}
+
+void FuncArgDecl () : {}
+{
+VarType() ArrayDecl() <IDENTIFIER>
+}
+
+void VarAssign () : {}
+{
+<INTEGER_CONSTANT> | <FLOAT_CONSTANT>
+| <LOGIC_CONSTANT>
+| <STRING_CONSTANT>
+| <HEXADECIMAL_CONSTANT>
+}
+
+void ArrayDecl () : {}
+{
+(<CLOSE21> (<INT> | <IDENTIFIER>)? <CLOSE22>)*
+}
+
+void StorageType () : {}
+{
+(<STATIC>)? (<FINAL>)? (<SYNCHRONIZED>)?
+}
+
+void VarType () : {}
+{
+<INT> | <FLOAT> | <LONG> | <DOUBLE> | <SHORT> | <CHAR> | <BYTE> | <BOOLEAN> | <IDENTIFIER>
+}
+
+void ReturnType () : {}
+{
+<VOID> | VarType()
+}
+
+void Scope () : {}
+{
+<PRIVATE> | <PUBLIC> | <PROTECTED>
 }
