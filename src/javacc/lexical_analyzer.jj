@@ -3,59 +3,74 @@ options {
 }
 PARSER_BEGIN(Scanner)
 
-  public class Scanner {
+import java.io.*;
+
+public class Scanner {
+    private InputStream inputStream = null;
+
+    public Scanner(String filename) {
+        this(System.in);
+        try {
+            inputStream = new FileInputStream(new File(filename));
+            ReInit(inputStream);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void main (String args[]) {
 
       //Parser initialization
       Scanner jscanner;
       int count_args = args.length;
 
-      if(count_args == 0) {
+      if(args.length == 0) {
         System.out.println ("Scanner: Waiting for input ...");
         jscanner = new Scanner(System.in);
       }
-      else if(count_args >= 1) {
-          for(int i = 0; i < count_args; i++) {
-              System.out.println ("Scanner: Reading the file " + args[i] + " ..." );
-              try {
-                  jscanner = new Scanner(new java.io.FileInputStream(args[i]));
-                  jscanner.Begin();
-                  System.out.println ("Scanner: The input was read sucessfully.");
-                  }
-              catch(java.io.FileNotFoundException e) {
-                  System.out.println ("Scanner: The file " + args[i] + " was not found.");
-                  return;
-                  }
-              catch(ParseException e) {
-                  System.out.println ("Scanner: There was an error during the parse.");
-                  System.out.println (e.getMessage());
-                  }
-              catch(TokenMgrError e) {
-                  System.out.println ("Scanner: There was an error.");
-                  System.out.println (e.getMessage());
-                  }
-                 }
-                }
+      else if(args.length == 1) {
+          System.out.println ("Scanner: Reading the file " + args[0] + " ..." );
+          try {
+              jscanner = new Scanner(new java.io.FileInputStream(args[0]));
+              System.out.println ("Scanner: The input was read sucessfully.");
+          }
+          catch(java.io.FileNotFoundException e) {
+              System.out.println ("Scanner: The file " + args[0] + " was not found.");
+              return;
+          }
+      }
       else {
         System.out.println ("Scanner:  You must use one of the following:");
-        System.out.println ("\tjava Scanner < files");
-        System.out.println ("Or");
-        System.out.println ("\tjava Scanner files");
+        System.out.println ("\tjava Scanner < file");
+        System.out.println ("\tjava Scanner file");
         return ;
       }
+      try{
+        jscanner.CompUnit();
+      }
+      catch(ParseException e) {
+          System.out.println ("Scanner: There was an error during the parse.");
+          System.out.println (e.getMessage());
+      }
+      catch(TokenMgrError e) {
+          System.out.println ("Scanner: There was an error.");
+          System.out.println (e.getMessage());
+      }
     }
-  }
+}
 
 PARSER_END(Scanner)
 
 SKIP : {
- " "
-|  "\t"
-|  "\n"
-|  "\r"
-|  <"rem" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
-|  <"//" (~["\n","\r"])*>
-|  <"/*"> : MULTILINE_COMMENT_STATE
+  " "
+| "\t"
+| "\n"
+| "\r"
+| "\f"
+| <"rem" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+| <"//" (~["\n","\r"])*>
+| <"/*"> : MULTILINE_COMMENT_STATE
 }
 
 <MULTILINE_COMMENT_STATE> SKIP : {
@@ -69,15 +84,16 @@ TOKEN : {
 | <FLOAT_CONSTANT: (<PLUS> | <MINUS>)?(<DIGIT>)+<DOT>(<DIGIT>)+>
 | <LOGIC_CONSTANT: "true" | "false" | "-1">
 | <STRING_CONSTANT: "\"" ( ~["\"","\\","\n","\r"] | "\\" ( ["n","t","b","r","f","\\","\'","\""] | ( ["\n","\r"] | "\r\n")))* "\"">
+| <CHAR_CONSTANT: "'" ( ~["\"","\\","\n","\r"] | "\\" ( ["n","t","b","r","f","\\","\'","\""] | ( ["\n","\r"] | "\r\n"))) "'">
 | <HEXADECIMAL_CONSTANT: "0"("x" | "X")(<LETTER> | <DIGIT>)+>
 | <#DIGIT: ["0"-"9"]>
 
-| <CLOSE01: "(">
-| <CLOSE02: ")">
-| <CLOSE11: "{">
-| <CLOSE12: "}">
-| <CLOSE21: "[">
-| <CLOSE22: "]">
+| <O_PAREN: "(">
+| <C_PAREN: ")">
+| <O_BRACE: "{">
+| <C_BRACE: "}">
+| <O_BRACKET: "[">
+| <C_BRACKET: "]">
 
 | <COMMA: ",">
 | <DOT: ".">
@@ -91,17 +107,26 @@ TOKEN : {
 | <AND: "&&">
 | <OR: "||">
 | <GTHAN: ">">
+| <GETHAN: ">=">
 | <LTHAN: "<">
+| <LETHAN: "<=">
 
 | <NOT: "!">
+| <DIFF: "~">
+| <COND: "?">
 
 | <CONCAT: "&">
+| <EXCL: "^">
 | <UNION: "|">
+
+| <INC: "++">
+| <DEC: "--">
 
 | <PLUS: "+">
 | <MINUS: "-">
 | <MULTIPLY: "*">
 | <DIVIDE: "/">
+| <MOD: "%">
 }
 
 //RESERVED WORDS
@@ -137,6 +162,7 @@ TOKEN : {
 | <LONG: "long">
 | <NATIVE: "native">
 | <NEW: "new">
+| <NULL: "null">
 | <PACKAGE: "package">
 | <PRIVATE: "private">
 | <PROTECTED: "protected">
@@ -166,146 +192,500 @@ TOKEN : {
 }
 
 TOKEN : {
- <OTHER: ~[]>
+<OTHER: ~[]>
 }
 
-//MAIN UNIT
-void Start () : {}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// MAIN UNIT //////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+void CompUnit () :
+{}
 {
-  (
-    <INTEGER_CONSTANT> | <STRING_CONSTANT> | <LOGIC_CONSTANT> | <HEXADECIMAL_CONSTANT> |
-    <CLOSE01> | <CLOSE02> | <CLOSE11> | <CLOSE12> | <CLOSE21> | <CLOSE22> |
-    <COMMA> | <DOT> | <SEMICOLON> | <COLON> |
-    <EQUALS> |
-    <CMPEQUALS> | <CMPNEQUALS> | <AND> | <OR> | <GTHAN> | <LTHAN> |
-    <NOT> |
-    <CONCAT> | <UNION> |
-    <PLUS> | <MINUS> | <MULTIPLY> | <DIVIDE> |
-    <ABSTRACT> | <ASSERT> | <BOOLEAN> | <BREAK> | <BYTE> | <CASE> | <CATCH> | <CHAR> | <CLASS> | <CONST> | <CONTINUE> | <DEFAULTR> | <DO> | <DOUBLE> | <ELSE> | <ENUM> | <EXTENDS> | <FINAL> |
-    <FINALLY> | <FLOAT> | <FOR> | <GOTO> | <IF> | <IMPLEMENTS> | <IMPORT> | <INSTANCEOF> | <INT> | <INTERFACE> | <LONG> | <NATIVE> | <NEW> | <PACKAGE> | <PRIVATE> | <PROTECTED> | <PUBLIC> |
-    <RETURN> | <SHORT> | <STATIC> | <STRICTFP> | <SUPER> | <SWITCH> | <SYNCHRONIZED> | <THIS> | <THROW> | <THROWS> | <TRANSIENT> | <TRY> | <VOID> | <VOLATILE> | <WHILE> |
-    <NOTATION> |
+    [LOOKAHEAD(2) PackageDecl() ]
+    ( ImportDecl() )*
+    ( TypeDecl() )*
+    <EOF>
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// DECLARATIONS //////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void PackageDecl():
+{}
+{
+    <PACKAGE> Name() <SEMICOLON>
+}
+
+void ImportDecl():
+{}
+{
+    <IMPORT> [<STATIC>] Name() [<DOT> <MULTIPLY>] <SEMICOLON>
+}
+
+void TypeDecl():
+{}
+{
+    Modifiers()
+    ClassDecl()
+}
+
+void ThrowsDecl():
+{}
+{
+    <THROWS> NameList()
+}
+
+/////////////////////// Class Declaration
+void ClassDecl():
+{}
+{
+    <CLASS>
     <IDENTIFIER>
-  )*
-  <EOF>
+    ClassBody()
 }
 
-void Begin () : {String mainClassName;}
+void ClassBody():
+{}
 {
-(Package())?
-(Import())*
-mainClassName=ClassDecl()
-<CLOSE11>
-ClassScope(mainClassName)
-<CLOSE12>
+    <O_BRACE>
+    ( ClassBodyDecl() )*
+    <C_BRACE>
 }
 
-void Package () : {}
+void ClassBodyDecl():
+{}
 {
-<PACKAGE> <IDENTIFIER> (<DOT> <IDENTIFIER>)* <SEMICOLON>
-}
-
-void Import () : {}
-{
-<IMPORT> <IDENTIFIER>
-(LOOKAHEAD(2) <DOT> <IDENTIFIER>)*
-(<DOT> <MULTIPLY>)?
-<SEMICOLON>
-}
-
-String ClassDecl () : {Token t;}
-{
-(Scope())? <CLASS>
-t=<IDENTIFIER> {
-    System.out.println("Found class \'"+t.image+"\'");
-    return t.image;
-    }
-}
-
-void ClassScope (String className) : {}
-{
-    {
-        System.out.println("Enterning scope of \'"+className+"\'");
-    }
-(
-    (Scope())? StorageType()
+    Modifiers()
     ( LOOKAHEAD(3)
-        ClassConstructorDecl(className) |
-        LOOKAHEAD(3)
-        ClassVarDecl() |
-        LOOKAHEAD(3)
-        ClassFuncDecl()
+        ClassDecl() |
+
+        LOOKAHEAD( <IDENTIFIER> <O_PAREN> )
+        ConstructorDecl() |
+
+        LOOKAHEAD( ReturnType() <IDENTIFIER> <O_PAREN> )
+        MethodDecl() |
+
+        FieldDecl()
     )
-)*
 }
 
-void ClassConstructorDecl (String name) : {Token t;}
+
+/////////////////////// Variable Declaration
+void LocalVarDecl():
+{}
 {
-t=<IDENTIFIER> {if (!t.image.equals(name)) return;
-System.out.println("Found constructor of "+name);}
-<CLOSE01>
-(FuncArgDecl() (<COMMA> FuncArgDecl())*)?
-<CLOSE02>
-// Body
-<CLOSE11>
-<CLOSE12>
+    Modifiers() Type() VarDecl() ( <COMMA> VarDecl() )* <SEMICOLON>
 }
 
-void ClassVarDecl () : {}
+void VarDecl():
+{}
 {
-VarType() ArrayDecl()
-<IDENTIFIER> (<COMMA> <IDENTIFIER>)*
-(<EQUALS> VarAssign())?
-<SEMICOLON>
+    VarDeclID() [ <EQUALS> VarInit() ]
 }
 
-void ClassFuncDecl () : {}
+void VarDeclID():
+{}
 {
-ReturnType() ArrayDecl()
-<IDENTIFIER>
-// Args
-<CLOSE01>
-(FuncArgDecl() (<COMMA> FuncArgDecl())*)?
-<CLOSE02>
-// Body
-<CLOSE11>
-<CLOSE12>
+    <IDENTIFIER> (<O_BRACKET> <C_BRACKET>)*
 }
 
-void FuncArgDecl () : {}
+void VarInit():
+{}
 {
-VarType() ArrayDecl() <IDENTIFIER>
+    Expr()
 }
 
-void VarAssign () : {}
+
+/////////////////////// Parameters Declaration
+void Parameters():
+{}
 {
-<INTEGER_CONSTANT> | <FLOAT_CONSTANT>
-| <LOGIC_CONSTANT>
-| <STRING_CONSTANT>
-| <HEXADECIMAL_CONSTANT>
+    <O_PAREN>
+    [
+        Parameter() ( <COMMA> Parameter() )*
+    ]
+    <C_PAREN>
 }
 
-void ArrayDecl () : {}
+void Parameter():
+{}
 {
-(<CLOSE21> (<INT> | <IDENTIFIER>)? <CLOSE22>)*
+    Modifiers()
+    Type()
+    <IDENTIFIER>
 }
 
-void StorageType () : {}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// MAIN CLASS DECL //////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ConstructorDecl():
+{}
 {
-(<STATIC>)? (<FINAL>)? (<SYNCHRONIZED>)?
+    <IDENTIFIER> Parameters() [ ThrowsDecl() ]
+    <O_BRACE>
+    ( CodeBlockStatement() )*
+    <C_BRACE>
 }
 
-void VarType () : {}
+void FieldDecl():
+{}
 {
-<INT> | <FLOAT> | <LONG> | <DOUBLE> | <SHORT> | <CHAR> | <BYTE> | <BOOLEAN> | <IDENTIFIER>
+    Type() VarDecl() ( <COMMA> VarDecl() )* <SEMICOLON>
 }
 
-void ReturnType () : {}
+void MethodDecl():
+{}
 {
-<VOID> | VarType()
+    ReturnType() <IDENTIFIER> Parameters() [ ThrowsDecl() ]
+    (
+        CodeBlock() |
+        <SEMICOLON>
+    )
 }
 
-void Scope () : {}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// CODE BLOCKS //////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void CodeBlock():
+{}
 {
-<PRIVATE> | <PUBLIC> | <PROTECTED>
+    <O_BRACE>
+    ( CodeBlockStatement() )*
+    <C_BRACE>
+}
+
+void CodeBlockStatement():
+{}
+{
+    LOOKAHEAD( Modifiers() Type() <IDENTIFIER> )
+    LocalVarDecl() |
+
+    LOOKAHEAD(3)
+    Statement()
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// TYPES //////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+void Type():
+{}
+{
+   ( LOOKAHEAD(2)
+        RefType() |
+        PrimitiveType()
+   )
+}
+
+void RefType():
+{}
+{
+    PrimitiveType() (LOOKAHEAD(2) <O_BRACKET> <C_BRACKET>)+ |
+    ClassType() (LOOKAHEAD(2) <O_BRACKET> <C_BRACKET>)*
+}
+
+void ClassType():
+{}
+{
+    Name()
+}
+
+void PrimitiveType():
+{}
+{
+    <SHORT> |
+    <INT> |
+    <LONG> |
+    <FLOAT> |
+    <DOUBLE> |
+    <BYTE> |
+    <BOOLEAN> |
+    <CHAR>
+}
+
+void ReturnType():
+{}
+{
+    <VOID> |
+    Type()
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// MODIFIERS //////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Modifiers():
+{}
+{
+    (
+        <PUBLIC> |
+        <PRIVATE> |
+        <PROTECTED> |
+        <STATIC> |
+        <FINAL> |
+        <ABSTRACT> |
+        <SYNCHRONIZED> |
+        <VOLATILE> |
+        <STRICTFP> |
+        <TRANSIENT> |
+        <NATIVE>
+    )*
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// STATEMENTS //////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Statement():
+{}
+{
+    StatementExpr() |
+    CodeBlock () |
+    IFStmt() |
+    WHILEStmt() |
+    DOWHILEStmt() |
+    FORStmt() |
+    TRYStmt() |
+    ReturnStmt()
+}
+
+void AssignOp():
+{}
+{
+    <EQUALS> |
+    <PLUS><EQUALS> |
+    <MINUS><EQUALS> |
+    <MULTIPLY><EQUALS> |
+    <DIVIDE><EQUALS>
+}
+
+void IFStmt():
+{}
+{
+    <IF> <O_PAREN> Expr() <C_PAREN> Statement()
+    [ LOOKAHEAD(1) <ELSE> Statement() ]
+}
+
+void WHILEStmt():
+{}
+{
+    <WHILE> <O_PAREN> Expr() <C_PAREN> Statement()
+}
+
+void DOWHILEStmt():
+{}
+{
+    <DO> Statement()
+    <WHILE> <O_PAREN> Expr() <C_PAREN> <SEMICOLON>
+}
+
+
+/////////////////////// For Statement
+void FORStmt():
+{}
+{
+    <FOR>
+    <O_PAREN>
+    [ FORInit() ] <SEMICOLON> [ Expr() ] <SEMICOLON> [ FORUpdate() ]
+    <C_PAREN>
+    Statement()
+}
+
+void FORInit():
+{}
+{
+    LocalVarDecl()
+}
+
+void FORUpdate():
+{}
+{
+    StatementExpr() ( <COMMA> StatementExpr() )*
+}
+//////
+
+void TRYStmt():
+{}
+{
+    <TRY>
+    CodeBlock()
+    (
+        <CATCH> <O_PAREN> Parameter() <C_PAREN>
+        CodeBlock()
+    )+
+
+    [ <FINALLY> CodeBlock() ]
+}
+
+void ReturnStmt():
+{}
+{
+    <RETURN> [ Expr() ] <SEMICOLON>
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////// EXPRESSIONS ////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void StatementExpr():
+{}
+{
+    PrimaryExpr() [ <INC> | <DEC> | AssignOp() Expr() ] <SEMICOLON>
+}
+
+void PrimaryExpr():
+{}
+{
+    PrimaryPrefix()
+/*    ( LOOKAHEAD(2)
+        PrimarySuffix()
+    )**/
+}
+
+void PrimaryPrefix():
+{}
+{
+    Literal() |
+    Name ()
+}
+
+void PrimarySuffix():
+{}
+{
+    Literal() |
+    Name ()
+}
+
+void Expr():
+{}
+{
+    ConditionalExpr()
+    [ LOOKAHEAD(2)
+        AssignOp() Expr()
+    ]
+}
+
+void ConditionalExpr():
+{}
+{
+    ConditionalOrExpr() [ <COND> Expr() <COLON> Expr() ]
+}
+
+void ConditionalOrExpr():
+{}
+{
+    ConditionalAndExpr() ( <OR> ConditionalAndExpr() )*
+}
+
+void ConditionalAndExpr():
+{}
+{
+    InclusiveOrExpr() ( <AND> InclusiveOrExpr() )*
+}
+
+void InclusiveOrExpr():
+{}
+{
+    ExclusiveOrExpr() ( <UNION> ExclusiveOrExpr() )*
+}
+
+void ExclusiveOrExpr():
+{}
+{
+    AndExpr() ( <EXCL> AndExpr() )*
+}
+
+void AndExpr():
+{}
+{
+    EqualityExpr() ( <CONCAT> EqualityExpr() )*
+}
+
+void EqualityExpr():
+{}
+{
+    InstanceOfExpr() ( ( <CMPEQUALS> | <CMPNEQUALS> ) InstanceOfExpr() )*
+}
+
+void InstanceOfExpr():
+{}
+{
+    RelationalExpr() [ <INSTANCEOF> Type() ]
+}
+
+void RelationalExpr():
+{}
+{
+    AdditiveExpr() ( ( <LTHAN> | <GTHAN> | <LETHAN> | <GETHAN> ) AdditiveExpr() )*
+}
+
+void AdditiveExpr():
+{}
+{
+    MultiplicativeExpr() ( ( <PLUS> | <MINUS> ) MultiplicativeExpr() )*
+}
+
+void MultiplicativeExpr():
+{}
+{
+    UnaryExpr() ( ( <MULTIPLY> | <DIVIDE> | <MOD> ) UnaryExpr() )*
+}
+
+void UnaryExpr():
+{}
+{
+    ( <PLUS> | <MINUS> ) UnaryExpr() |
+    PreIncrementExpr() |
+    PreDecrementExpr() |
+    UnaryExprNotPlusMinus()
+}
+
+void PreIncrementExpr():
+{}
+{
+    <INC> PrimaryExpr()
+}
+
+void PreDecrementExpr():
+{}
+{
+    <DEC> PrimaryExpr()
+}
+
+void UnaryExprNotPlusMinus():
+{}
+{
+    ( <DIFF> | <NOT> ) UnaryExpr() |
+    PostfixExpr()
+}
+
+void PostfixExpr():
+{}
+{
+    PrimaryExpr() [ <INC> | <DEC> ]
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// MISC //////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+void Name():
+{}
+{
+    <IDENTIFIER>
+    (LOOKAHEAD(2)
+        <DOT> <IDENTIFIER>
+    )*
+}
+
+void NameList():
+{}
+{
+    Name()
+    ( <COMMA> Name() )*
+}
+
+void Literal():
+{}
+{
+    <INTEGER_CONSTANT> |
+    <FLOAT_CONSTANT> |
+    <CHAR_CONSTANT> |
+    <STRING_CONSTANT> |
+    <LOGIC_CONSTANT> |
+    <NULL>
 }
